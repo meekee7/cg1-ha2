@@ -1,0 +1,17 @@
+EXECUTABLES = cg1_ex2
+CC=g++
+CFLAGS= -O3 
+DEPS =  glm.h 
+OBJ = glm.o projection.o
+LIBS = -lGLU -lGL -lglut -lm
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+cg1_ex2: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: clean
+
+clean:
+	rm -f *.o *~ $(EXECUTABLES)

@@ -1,0 +1,17 @@
+EXECUTABLES = cg1_ex2_mac
+CC=g++
+CFLAGS= -O3 -DMACOSX
+DEPS =  glm.h 
+OBJ = glm.o projection.o
+LIBS= -framework GLUT -framework OpenGL -lm
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+cg1_ex2_mac: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: clean
+
+clean:
+	rm -f *.o *~ $(EXECUTABLES)
