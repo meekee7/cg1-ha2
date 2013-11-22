@@ -26,7 +26,6 @@
 #include <string.h>
 #include <assert.h>
 #include "glm.h"
-
 #pragma comment( linker, "/entry:\"mainCRTStartup\"" )  
 // set the entry point to be main()
 
@@ -116,7 +115,7 @@ void redisplay_all(void);
 GLdouble projection[16], modelview[16];
 GLdouble m_inverse[16], p_inverse[16];
 
-GLuint window, world, screen, command;
+GLuint window, world, screen, clip, command;
 GLuint sub_width = 256, sub_height = 256;
 
 
@@ -357,8 +356,8 @@ main_reshape(int width, int height)
 	glLoadIdentity();
 
 #define GAP  25             /* gap between subwindows */
-	sub_width = (width - GAP * 3) / 2.0;
-	sub_height = (height - GAP * 3) / 2.0;
+	sub_width = (width - GAP * 4) / 3.0;
+	sub_height = (height - GAP * 3) / 3.0;
 
 	glutSetWindow(world);
 	glutPositionWindow(GAP, GAP);
@@ -366,10 +365,13 @@ main_reshape(int width, int height)
 	glutSetWindow(screen);
 	glutPositionWindow(GAP + sub_width + GAP, GAP);
 	glutReshapeWindow(sub_width, sub_height);
+	glutSetWindow(clip);
+	glutPositionWindow(GAP + sub_width + GAP + sub_width + GAP, GAP);
+	glutReshapeWindow(sub_width, sub_height);
 
 	glutSetWindow(command);
 	glutPositionWindow(GAP, GAP + sub_height + GAP);
-	glutReshapeWindow(sub_width + GAP + sub_width, sub_height);
+	glutReshapeWindow(sub_width + GAP + sub_width + GAP + sub_width, sub_height + sub_height);
 
 }
 
@@ -382,6 +384,7 @@ main_display(void)
 	setfont("helvetica", 12);
 	drawstr(GAP, GAP - 5, "World-space view");
 	drawstr(GAP + sub_width + GAP, GAP - 5, "Screen-space view");
+	drawstr(GAP + sub_width + GAP + sub_width + GAP, GAP - 5, "Clip-space view");
 	drawstr(GAP, GAP + sub_height + GAP - 5, "Command manipulation window");
 	glutSwapBuffers();
 }
@@ -599,6 +602,9 @@ screen_display(void)
 	// must have modelview transform applied to it in order
 	// to have correct light position in eye coordinates
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 	drawmodel();
 	glutSwapBuffers();
 }
@@ -641,6 +647,54 @@ screen_menu(int value)
 	}
 
 	redisplay_all();
+}
+
+void clip_reshape(int width, int height){
+	//Copied and pasted
+	/*glViewport(0, 0, width, height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, (GLfloat)width / height, 1.0, 256.0);
+	/*if (mode == PERSPECTIVE)
+		gluPerspective(perspective[0].value, perspective[1].value,
+		perspective[2].value, perspective[3].value);
+	else if (mode == ORTHO)
+		glOrtho(ortho[0].value, ortho[1].value, ortho[2].value,
+		ortho[3].value, ortho[4].value, ortho[5].value);
+	else if (mode == FRUSTUM)
+		glFrustum(frustum[0].value, frustum[1].value, frustum[2].value,
+		frustum[3].value, frustum[4].value, frustum[5].value);*/
+	//glGetDoublev(GL_PROJECTION_MATRIX, projection);
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
+	
+	/*gluLookAt(lookat[0].value, lookat[1].value, lookat[2].value,
+		lookat[3].value, lookat[4].value, lookat[5].value,
+		lookat[6].value, lookat[7].value, lookat[8].value);*/
+	//glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+	/*glClearColor(0.0, 0.0, 0.0, 0.0);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);*/
+}
+
+void clip_display(void){
+	//Copied and pasted
+	/*GLfloat light_pos[] = { 0.0, 0.0, 1.0, 0.0 };
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// directional light in positve z-direction
+	// must have modelview transform applied to it in order
+	// to have correct light position in eye coordinates
+	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	drawmodel();
+	glutSwapBuffers();*/
+}
+
+void clip_menu(int value){
 }
 
 void
@@ -860,13 +914,16 @@ redisplay_all(void)
 	glutSetWindow(screen);
 	screen_reshape(sub_width, sub_height);
 	glutPostRedisplay();
+	glutSetWindow(clip);
+	screen_reshape(sub_width, sub_height);
+	glutPostRedisplay();
 }
 
 int
 main(int argc, char** argv)
 {
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
-	glutInitWindowSize(512 + GAP * 3, 512 + GAP * 3);
+	glutInitWindowSize(768 + GAP * 4, 768 + GAP * 3);
 	glutInitWindowPosition(50, 50);
 	glutInit(&argc, argv);
 
@@ -897,6 +954,14 @@ main(int argc, char** argv)
 	glutAddMenuEntry("Flowers", 'f');
 	glutAddMenuEntry("Porsche", 'p');
 	glutAddMenuEntry("Rose", 'r');
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+	clip = glutCreateSubWindow(window, GAP + 256 + GAP + 256 + GAP, GAP, 256, 256);
+	glutReshapeFunc(clip_reshape);
+	glutDisplayFunc(clip_display);
+	glutCreateMenu(clip_menu);
+	glutAddMenuEntry("Toggle model [m] TODO IMPLEMENT", 'm');
+	glutAddMenuEntry("Toggle clipping planes [t] TODO IMPLEMENT", 't');
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	command = glutCreateSubWindow(window, GAP + 256 + GAP, GAP + 256 + GAP, 256, 256);
