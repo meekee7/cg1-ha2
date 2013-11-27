@@ -649,7 +649,7 @@ screen_menu(int value)
 	redisplay_all();
 }
 
-GLfloat clipperspectivevalue;
+GLfloat clipperspectivevalue; //Globals for the clipping screen
 GLfloat cliprotation = 0.0f;
 int clipoldx;
 int clipshowmodel = 1;
@@ -677,29 +677,27 @@ void clip_display(void){
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
 
-	if (clipcliponplanes){
-		const GLdouble upplane[] = { 0.0, -1.0, 0.0, 1.0 }; //Determined by poking around
-		const GLdouble downplane[] = { 0.0, 1.0, 0.0, 1.0 };
-		const GLdouble frontplane[] = { 0.0, 0.0, -1.0, 1.0  };
-		const GLdouble backplane[] = { 0.0, 0.0, 1.0, 1.0 };
-		const GLdouble leftplane[] = { 1.0, 0.0, 0.0, 1.0 };
-		const GLdouble rightplane[] = { -1.0, 0.0, 0.0, 1.0 };
-		glClipPlane(GL_CLIP_PLANE0, upplane);
-		glClipPlane(GL_CLIP_PLANE1, downplane);
-		glClipPlane(GL_CLIP_PLANE2, frontplane);
-		glClipPlane(GL_CLIP_PLANE3, backplane);
-		glClipPlane(GL_CLIP_PLANE4, leftplane);
-		glClipPlane(GL_CLIP_PLANE5, rightplane);
-		glEnable(GL_CLIP_PLANE0);
-		glEnable(GL_CLIP_PLANE1);
-		glEnable(GL_CLIP_PLANE2);
-		glEnable(GL_CLIP_PLANE3);
-		glEnable(GL_CLIP_PLANE4);
-		glEnable(GL_CLIP_PLANE5);
-	}
-	
-
 	if (clipshowmodel){
+		if (clipcliponplanes){ //Clipping is only done when enabled, and only on the model
+			const GLdouble upplane[] = { 0.0, -1.0, 0.0, 1.0 }; //Determined by poking around
+			const GLdouble downplane[] = { 0.0, 1.0, 0.0, 1.0 };
+			const GLdouble frontplane[] = { 0.0, 0.0, -1.0, 1.0 };
+			const GLdouble backplane[] = { 0.0, 0.0, 1.0, 1.0 };
+			const GLdouble leftplane[] = { 1.0, 0.0, 0.0, 1.0 };
+			const GLdouble rightplane[] = { -1.0, 0.0, 0.0, 1.0 };
+			glClipPlane(GL_CLIP_PLANE0, upplane);
+			glClipPlane(GL_CLIP_PLANE1, downplane);
+			glClipPlane(GL_CLIP_PLANE2, frontplane);
+			glClipPlane(GL_CLIP_PLANE3, backplane);
+			glClipPlane(GL_CLIP_PLANE4, leftplane);
+			glClipPlane(GL_CLIP_PLANE5, rightplane);
+			glEnable(GL_CLIP_PLANE0);
+			glEnable(GL_CLIP_PLANE1);
+			glEnable(GL_CLIP_PLANE2);
+			glEnable(GL_CLIP_PLANE3);
+			glEnable(GL_CLIP_PLANE4);
+			glEnable(GL_CLIP_PLANE5);
+		}
 		glPushMatrix();
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity(); //TODO actually use the matrices created in screen_reshape instead of creating them again
@@ -718,14 +716,13 @@ void clip_display(void){
 		glLoadIdentity(); //Restore normal perspective
 		gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
 		glMatrixMode(GL_MODELVIEW);
+		glDisable(GL_CLIP_PLANE0);
+		glDisable(GL_CLIP_PLANE1);
+		glDisable(GL_CLIP_PLANE2);
+		glDisable(GL_CLIP_PLANE3);
+		glDisable(GL_CLIP_PLANE4);
+		glDisable(GL_CLIP_PLANE5);
 	}
-
-	glDisable(GL_CLIP_PLANE0);
-	glDisable(GL_CLIP_PLANE1);
-	glDisable(GL_CLIP_PLANE2);
-	glDisable(GL_CLIP_PLANE3);
-	glDisable(GL_CLIP_PLANE4);
-	glDisable(GL_CLIP_PLANE5);
 
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glDisable(GL_LIGHTING);
