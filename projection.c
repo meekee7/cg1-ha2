@@ -649,52 +649,154 @@ screen_menu(int value)
 	redisplay_all();
 }
 
+GLfloat clipperspectivevalue;
+GLfloat cliprotation = 0.0f;
+int clipoldx;
+int clipshowmodel = 1;
+int clipcliponplanes = 1;
 void clip_reshape(int width, int height){
+	clipperspectivevalue = (GLfloat)width / height;
+	glViewport(0, 0, width, height);
 	//Copied and pasted
-	/*glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
+	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluPerspective(60.0, (GLfloat)width / height, 1.0, 256.0);
-	/*if (mode == PERSPECTIVE)
-		gluPerspective(perspective[0].value, perspective[1].value,
-		perspective[2].value, perspective[3].value);
-	else if (mode == ORTHO)
-		glOrtho(ortho[0].value, ortho[1].value, ortho[2].value,
-		ortho[3].value, ortho[4].value, ortho[5].value);
-	else if (mode == FRUSTUM)
-		glFrustum(frustum[0].value, frustum[1].value, frustum[2].value,
-		frustum[3].value, frustum[4].value, frustum[5].value);*/
-	//glGetDoublev(GL_PROJECTION_MATRIX, projection);
-	//glMatrixMode(GL_MODELVIEW);
-	//glLoadIdentity();
-	
-	/*gluLookAt(lookat[0].value, lookat[1].value, lookat[2].value,
-		lookat[3].value, lookat[4].value, lookat[5].value,
-		lookat[6].value, lookat[7].value, lookat[8].value);*/
-	//glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-	/*glClearColor(0.0, 0.0, 0.0, 0.0);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);*/
+	glTranslatef(0.0, 0.0, -5.0);
+	glRotatef(-45.0, 0.0, 1.0, 0.0);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
 void clip_display(void){
 	//Copied and pasted
-	/*GLfloat light_pos[] = { 0.0, 0.0, 1.0, 0.0 };
+	GLfloat light_pos[] = { 0.0, 0.0, 1.0, 0.0 };
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// directional light in positve z-direction
-	// must have modelview transform applied to it in order
-	// to have correct light position in eye coordinates
+	glPushMatrix();
+	glRotatef(cliprotation, 0.0f, 1.0f, 0.0f);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	drawmodel();
-	glutSwapBuffers();*/
+	glEnable(GL_DEPTH_TEST);
+
+	if (clipcliponplanes){
+		const GLdouble upplane[] = { 0.0, -1.0, 0.0, 1.0 }; //Determined by poking around
+		const GLdouble downplane[] = { 0.0, 1.0, 0.0, 1.0 };
+		const GLdouble frontplane[] = { 0.0, 0.0, -1.0, 1.0  };
+		const GLdouble backplane[] = { 0.0, 0.0, 1.0, 1.0 };
+		const GLdouble leftplane[] = { 1.0, 0.0, 0.0, 1.0 };
+		const GLdouble rightplane[] = { -1.0, 0.0, 0.0, 1.0 };
+		glClipPlane(GL_CLIP_PLANE0, upplane);
+		glClipPlane(GL_CLIP_PLANE1, downplane);
+		glClipPlane(GL_CLIP_PLANE2, frontplane);
+		glClipPlane(GL_CLIP_PLANE3, backplane);
+		glClipPlane(GL_CLIP_PLANE4, leftplane);
+		glClipPlane(GL_CLIP_PLANE5, rightplane);
+		glEnable(GL_CLIP_PLANE0);
+		glEnable(GL_CLIP_PLANE1);
+		glEnable(GL_CLIP_PLANE2);
+		glEnable(GL_CLIP_PLANE3);
+		glEnable(GL_CLIP_PLANE4);
+		glEnable(GL_CLIP_PLANE5);
+	}
+	
+
+	if (clipshowmodel){
+		glPushMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity(); //TODO actually use the matrices created in screen_reshape instead of creating them again
+		if (mode == PERSPECTIVE) //Perspective for model
+			gluPerspective(perspective[0].value, perspective[1].value, perspective[2].value, perspective[3].value);
+		else if (mode == ORTHO)
+			glOrtho(ortho[0].value, ortho[1].value, ortho[2].value, ortho[3].value, ortho[4].value, ortho[5].value);
+		else if (mode == FRUSTUM)
+			glFrustum(frustum[0].value, frustum[1].value, frustum[2].value, frustum[3].value, frustum[4].value, frustum[5].value);
+		glMatrixMode(GL_MODELVIEW); //More perspective for model TODO see above
+		glTranslatef(0.0f, 0.0f, 2.0f);
+		gluLookAt(lookat[0].value, lookat[1].value, lookat[2].value, lookat[3].value, lookat[4].value, lookat[5].value, lookat[6].value, lookat[7].value, lookat[8].value);
+		drawmodel();
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity(); //Restore normal perspective
+		gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
+		glMatrixMode(GL_MODELVIEW);
+	}
+
+	glDisable(GL_CLIP_PLANE0);
+	glDisable(GL_CLIP_PLANE1);
+	glDisable(GL_CLIP_PLANE2);
+	glDisable(GL_CLIP_PLANE3);
+	glDisable(GL_CLIP_PLANE4);
+	glDisable(GL_CLIP_PLANE5);
+
+	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+	glDisable(GL_LIGHTING);
+	glBegin(GL_LINES); {
+		glLineWidth(1.2f);
+
+		glColor3ub(255, 0, 0); //x-axis
+		glVertex3i(0, 0, 0);
+		glVertex3i(1, 0, 0);
+
+		glColor3ub(0, 255, 0); //y-axis
+		glVertex3i(0, 0, 0);
+		glVertex3i(0, 1, 0);
+
+		glColor3ub(0, 0, 255); //z-axis
+		glVertex3i(0, 0, 0);
+		glVertex3i(0, 0, 1);
+
+		glColor3ub(40, 180, 0); //Cube edges
+		glVertex3i(-1, -1, -1);
+		glVertex3i(-1, -1, 1);
+
+		glVertex3i(-1, 1, -1);
+		glVertex3i(-1, 1, 1);
+
+		glVertex3i(1, -1, -1);
+		glVertex3i(1, -1, 1);
+
+		glVertex3i(1, 1, -1);
+		glVertex3i(1, 1, 1);
+	} glEnd();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBegin(GL_QUADS); {
+		glColor4f(0.2f, 0.2f, 0.4f, 0.5f);
+		glVertex3i(1, 1, 1); //Front plate
+		glVertex3i(-1, 1, 1);
+		glVertex3i(-1, -1, 1);
+		glVertex3i(1, -1, 1);
+
+		glColor4f(0.4f, 0.4f, 0.4f, 0.5f);
+		glVertex3i(1, 1, -1); //Back plate
+		glVertex3i(-1, 1, -1);
+		glVertex3i(-1, -1, -1);
+		glVertex3i(1, -1, -1);
+	} glEnd();
+	glDisable(GL_BLEND);
+	glEnable(GL_LIGHTING);
+	glPopAttrib();
+
+	glPopMatrix();
+	glutSwapBuffers();
 }
 
 void clip_menu(int value){
+	if (value == 'm')
+		clipshowmodel = !clipshowmodel;
+	if (value == 't')
+		clipcliponplanes = !clipcliponplanes;
+	redisplay_all();
+}
+
+void clip_mouse(int button, int state, int x, int y){
+	if (state == GLUT_DOWN)
+		clipoldx = x;
+}
+
+void clip_motion(int x, int y){
+	cliprotation += (x - clipoldx);
+	clipoldx = x;
+	redisplay_all();
 }
 
 void
@@ -915,7 +1017,7 @@ redisplay_all(void)
 	screen_reshape(sub_width, sub_height);
 	glutPostRedisplay();
 	glutSetWindow(clip);
-	screen_reshape(sub_width, sub_height);
+	clip_reshape(sub_width, sub_height);
 	glutPostRedisplay();
 }
 
@@ -959,9 +1061,11 @@ main(int argc, char** argv)
 	clip = glutCreateSubWindow(window, GAP + 256 + GAP + 256 + GAP, GAP, 256, 256);
 	glutReshapeFunc(clip_reshape);
 	glutDisplayFunc(clip_display);
+	glutMouseFunc(clip_mouse);
+	glutMotionFunc(clip_motion);
 	glutCreateMenu(clip_menu);
-	glutAddMenuEntry("Toggle model [m] TODO IMPLEMENT", 'm');
-	glutAddMenuEntry("Toggle clipping planes [t] TODO IMPLEMENT", 't');
+	glutAddMenuEntry("Toggle model", 'm');
+	glutAddMenuEntry("Toggle clipping planes", 't');
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	command = glutCreateSubWindow(window, GAP + 256 + GAP, GAP + 256 + GAP, 256, 256);
