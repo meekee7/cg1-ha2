@@ -699,21 +699,18 @@ void clip_display(void){
 			glEnable(GL_CLIP_PLANE5);
 		}
 		glPushMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity(); //TODO actually use the matrices created in screen_reshape instead of creating them again
-		if (mode == PERSPECTIVE) //Perspective for model
-			gluPerspective(perspective[0].value, perspective[1].value, perspective[2].value, perspective[3].value);
-		else if (mode == ORTHO)
-			glOrtho(ortho[0].value, ortho[1].value, ortho[2].value, ortho[3].value, ortho[4].value, ortho[5].value);
-		else if (mode == FRUSTUM)
-			glFrustum(frustum[0].value, frustum[1].value, frustum[2].value, frustum[3].value, frustum[4].value, frustum[5].value);
-		glMatrixMode(GL_MODELVIEW); //More perspective for model TODO see above
-		glTranslatef(0.0f, 0.0f, 2.0f);
-		gluLookAt(lookat[0].value, lookat[1].value, lookat[2].value, lookat[3].value, lookat[4].value, lookat[5].value, lookat[6].value, lookat[7].value, lookat[8].value);
+		glMatrixMode(GL_PROJECTION); //Perspective transformation of the model
+		glLoadIdentity();
+		//invert(projection, p_inverse);
+		glMultMatrixd(projection); //projection and modelview come from screen_reshape
+		glMatrixMode(GL_MODELVIEW);
+		//invert(modelview, p_inverse);
+		glMultMatrixd(modelview);
+		glTranslatef(0.0f, 0.0f, 2.0f); //TODO remove this translation when this actually works we probably won't need it
 		drawmodel();
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity(); //Restore normal perspective
+		glLoadIdentity(); //Restore normal perspective TODO maybe we do not need to whe this actually works
 		gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
 		glMatrixMode(GL_MODELVIEW);
 		glDisable(GL_CLIP_PLANE0);
@@ -741,7 +738,7 @@ void clip_display(void){
 		glVertex3i(0, 0, 0);
 		glVertex3i(0, 0, 1);
 
-		glColor3ub(40, 180, 0); //Cube edges
+		glColor3ub(128, 196, 128); //Cube edges
 		glVertex3i(-1, -1, -1);
 		glVertex3i(-1, -1, 1);
 
