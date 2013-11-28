@@ -649,36 +649,25 @@ screen_menu(int value)
 	redisplay_all();
 }
 
-GLfloat clipperspectivevalue; //Globals for the clipping screen
-GLfloat cliprotation = 0.0f;
+GLfloat cliprotation = 0.0f; //Globals for the clipping screen
 int clipoldx;
 int clipshowmodel = 1;
 int clipcliponplanes = 1;
 
 void clip_reshape(int width, int height){
-	clipperspectivevalue = (GLfloat)width / height;
 	glViewport(0, 0, width, height);
-	//Copied and pasted
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity(); //Restore normal perspective
+	gluPerspective(60.0, (GLfloat)width / height, 1.0, 256.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(0.0, 0.0, -5.0);
-	glRotatef(-45.0, 0.0, 1.0, 0.0);
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glTranslatef(0.0f, 0.0f, -3.5f);
+	glRotatef(-45.0f + cliprotation, 0.0f, 1.0f, 0.0f); //cliprotation is rotation by mouse
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void clip_display(void){
-	//Copied and pasted
-	GLfloat light_pos[] = { 0.0, 0.0, 1.0, 0.0 };
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPushMatrix();
-	glRotatef(cliprotation, 0.0f, 1.0f, 0.0f); //Rotation by mouse
-	//glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-	glEnable(GL_NORMALIZE); //Solves incorrect lighting behaviour
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_DEPTH_TEST);
 
 	if (clipshowmodel){
 		if (clipcliponplanes){ //Clipping is only done when enabled, and only on the model
@@ -701,28 +690,31 @@ void clip_display(void){
 			glEnable(GL_CLIP_PLANE4);
 			glEnable(GL_CLIP_PLANE5);
 		}
+		GLfloat light_pos[] = { 0.0, 0.0, 1.0, 0.0 };
+		glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+		glEnable(GL_NORMALIZE); //Partially solves incorrect lighting behaviour
+		glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHT0);
+		glEnable(GL_DEPTH_TEST);
+
 		glPushMatrix();
-		glMatrixMode(GL_MODELVIEW); //Perspective transformation of the model
-		//glLoadIdentity(); //Important that we have _no_ loadidentity
+		//glMatrixMode(GL_MODELVIEW); //Perspective transformation of the model, GL_MODELVIEW is already enabled by clip_reshape
+		//glLoadIdentity(); //Important that we have _no_ glLoadIdentity
 		glScaled(1.0, 1.0, -1.0); //this is because projection has an inverted z-axis
 		glMultMatrixd(projection); //projection and modelview come from screen_reshape
 		glMultMatrixd(modelview);
 		drawmodel();
 		glPopMatrix();
-		glDisable(GL_CLIP_PLANE0);
+		glDisable(GL_CLIP_PLANE0); //Because we only clip the model
 		glDisable(GL_CLIP_PLANE1);
 		glDisable(GL_CLIP_PLANE2);
 		glDisable(GL_CLIP_PLANE3);
 		glDisable(GL_CLIP_PLANE4);
 		glDisable(GL_CLIP_PLANE5);
+		glDisable(GL_LIGHTING);
 	}
-	
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity(); //Restore normal perspective
-	gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
-	glMatrixMode(GL_MODELVIEW);
+
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-	glDisable(GL_LIGHTING);
 	drawaxes();
 	glBegin(GL_LINES); {
 		glLineWidth(1.2f);
@@ -768,10 +760,8 @@ void clip_display(void){
 		glVertex3i(1, -1, -1);
 	} glEnd();
 	glDisable(GL_BLEND);
-	glEnable(GL_LIGHTING);
 	glPopAttrib();
 
-	glPopMatrix();
 	glutSwapBuffers();
 }
 
@@ -1082,7 +1072,6 @@ main(int argc, char** argv)
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	redisplay_all();
-
 	glutMainLoop();
 
 	return 0;
