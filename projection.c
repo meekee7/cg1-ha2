@@ -654,6 +654,7 @@ GLfloat cliprotation = 0.0f;
 int clipoldx;
 int clipshowmodel = 1;
 int clipcliponplanes = 1;
+
 void clip_reshape(int width, int height){
 	clipperspectivevalue = (GLfloat)width / height;
 	glViewport(0, 0, width, height);
@@ -671,7 +672,7 @@ void clip_display(void){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
-	glRotatef(cliprotation, 0.0f, 1.0f, 0.0f);
+	glRotatef(cliprotation, 0.0f, 1.0f, 0.0f); //Rotation by mouse
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
@@ -699,20 +700,14 @@ void clip_display(void){
 			glEnable(GL_CLIP_PLANE5);
 		}
 		glPushMatrix();
-		glMatrixMode(GL_PROJECTION); //Perspective transformation of the model
-		glLoadIdentity();
-		//invert(projection, p_inverse);
+		glMatrixMode(GL_MODELVIEW); //Perspective transformation of the model
+		//glLoadIdentity(); //Important that we have _no_ loadidentiy
 		glMultMatrixd(projection); //projection and modelview come from screen_reshape
-		glMatrixMode(GL_MODELVIEW);
-		//invert(modelview, p_inverse);
 		glMultMatrixd(modelview);
-		glTranslatef(0.0f, 0.0f, 2.0f); //TODO remove this translation when this actually works we probably won't need it
+		glRotatef(180.0f, 0.0f, 1.0f, 0.0f); //TODO the rotation is not correct yet, figure that out
+		//glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
 		drawmodel();
 		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity(); //Restore normal perspective TODO maybe we do not need to whe this actually works
-		gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
-		glMatrixMode(GL_MODELVIEW);
 		glDisable(GL_CLIP_PLANE0);
 		glDisable(GL_CLIP_PLANE1);
 		glDisable(GL_CLIP_PLANE2);
@@ -720,13 +715,18 @@ void clip_display(void){
 		glDisable(GL_CLIP_PLANE4);
 		glDisable(GL_CLIP_PLANE5);
 	}
-
+	
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity(); //Restore normal perspective
+	gluPerspective(60.0, clipperspectivevalue, 1.0, 256.0);
+	glMatrixMode(GL_MODELVIEW);
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glDisable(GL_LIGHTING);
+	drawaxes();
 	glBegin(GL_LINES); {
 		glLineWidth(1.2f);
 
-		glColor3ub(255, 0, 0); //x-axis
+		/*glColor3ub(255, 0, 0); //x-axis
 		glVertex3i(0, 0, 0);
 		glVertex3i(1, 0, 0);
 
@@ -736,7 +736,7 @@ void clip_display(void){
 
 		glColor3ub(0, 0, 255); //z-axis
 		glVertex3i(0, 0, 0);
-		glVertex3i(0, 0, 1);
+		glVertex3i(0, 0, 1);*/
 
 		glColor3ub(128, 196, 128); //Cube edges
 		glVertex3i(-1, -1, -1);
@@ -760,7 +760,7 @@ void clip_display(void){
 		glVertex3i(-1, -1, 1);
 		glVertex3i(1, -1, 1);
 
-		glColor4f(0.4f, 0.4f, 0.4f, 0.5f);
+		glColor4f(0.4f, 0.4f, 0.4f, 1.0f);
 		glVertex3i(1, 1, -1); //Back plate
 		glVertex3i(-1, 1, -1);
 		glVertex3i(-1, -1, -1);
