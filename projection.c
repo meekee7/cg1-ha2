@@ -673,7 +673,9 @@ void clip_display(void){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
 	glRotatef(cliprotation, 0.0f, 1.0f, 0.0f); //Rotation by mouse
+	//glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+	glEnable(GL_NORMALIZE); //Solves incorrect lighting behaviour
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
@@ -701,11 +703,10 @@ void clip_display(void){
 		}
 		glPushMatrix();
 		glMatrixMode(GL_MODELVIEW); //Perspective transformation of the model
-		//glLoadIdentity(); //Important that we have _no_ loadidentiy
+		//glLoadIdentity(); //Important that we have _no_ loadidentity
+		glScaled(1.0, 1.0, -1.0); //this is because projection has an inverted z-axis
 		glMultMatrixd(projection); //projection and modelview come from screen_reshape
 		glMultMatrixd(modelview);
-		glRotatef(180.0f, 0.0f, 1.0f, 0.0f); //TODO the rotation is not correct yet, figure that out
-		//glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
 		drawmodel();
 		glPopMatrix();
 		glDisable(GL_CLIP_PLANE0);
